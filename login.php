@@ -8,6 +8,7 @@ if (isset($_SESSION["admin"])) {
 }
 
 if (isset($_POST['login']) && !empty($_POST['password'])) {
+  // julvir:MEMOPLAY
 	if ($_POST['login'] == 'admin' && $_POST['password'] == '000000') {
 		$_SESSION['admin'] = 'admin';
 		// if (!isset($_POST["remember"])) {
