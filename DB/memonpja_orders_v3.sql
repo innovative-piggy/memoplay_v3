@@ -1,35 +1,27 @@
--- phpMyAdmin SQL Dump
--- version 4.9.2
--- https://www.phpmyadmin.net/
---
--- Host: 127.0.0.1:3306
--- Generation Time: Nov 25, 2020 at 07:15 AM
--- Server version: 10.4.10-MariaDB
--- PHP Version: 7.3.12
+/*
+ Navicat Premium Data Transfer
 
-SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
-SET AUTOCOMMIT = 0;
-START TRANSACTION;
-SET time_zone = "+00:00";
+ Source Server         : 127.0.0.1_3306
+ Source Server Type    : MySQL
+ Source Server Version : 100410
+ Source Host           : 127.0.0.1:3306
+ Source Schema         : memonpja_orders
 
+ Target Server Type    : MySQL
+ Target Server Version : 100410
+ File Encoding         : 65001
 
-/*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
-/*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
-/*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
-/*!40101 SET NAMES utf8mb4 */;
+ Date: 02/12/2020 10:01:44
+*/
 
---
--- Database: `memonpja_orders`
---
+SET NAMES utf8mb4;
+SET FOREIGN_KEY_CHECKS = 0;
 
--- --------------------------------------------------------
-
---
--- Table structure for table `orders`
---
-
+-- ----------------------------
+-- Table structure for orders
+-- ----------------------------
 DROP TABLE IF EXISTS `orders`;
-CREATE TABLE IF NOT EXISTS `orders` (
+CREATE TABLE `orders`  (
   `order_id_n` varchar(11) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
   `order_id` int(11) NOT NULL,
   `title` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
@@ -39,36 +31,30 @@ CREATE TABLE IF NOT EXISTS `orders` (
   `shipping_address` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
   `city` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
   `country` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
-  `titre_musique` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL,
-  `phrase_personnalisee` longtext COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `cover_image` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL,
-  `spotify_code` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL,
-  `taille` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL,
+  `titre_musique` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NULL,
+  `phrase_personnalisee` varchar(1024) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL DEFAULT NULL,
+  `cover_image` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NULL,
+  `spotify_code` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NULL,
+  `taille` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NULL,
   `datep` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
   `quantity` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
-  `SKU` varchar(22) CHARACTER SET latin1 NOT NULL,
-  `shopify_id` bigint(20) DEFAULT NULL,
-  PRIMARY KEY (`order_id_n`),
-  UNIQUE KEY `order_id_n` (`order_id_n`),
-  UNIQUE KEY `shopify_id` (`shopify_id`) USING BTREE
-) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+  `SKU` varchar(22) CHARACTER SET latin1 COLLATE latin1_swedish_ci NOT NULL,
+  `shopify_id` bigint(20) NULL DEFAULT NULL,
+  PRIMARY KEY (`order_id_n`) USING BTREE,
+  UNIQUE INDEX `order_id_n`(`order_id_n`) USING BTREE
+) ENGINE = MyISAM CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci ROW_FORMAT = Dynamic;
 
--- --------------------------------------------------------
-
---
--- Table structure for table `zip`
---
-
+-- ----------------------------
+-- Table structure for zip
+-- ----------------------------
 DROP TABLE IF EXISTS `zip`;
-CREATE TABLE IF NOT EXISTS `zip` (
+CREATE TABLE `zip`  (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `datep` int(11) NOT NULL,
   `startp` int(11) NOT NULL,
   `endp` int(11) NOT NULL,
-  PRIMARY KEY (`id`)
-) ENGINE=MyISAM AUTO_INCREMENT=23 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-COMMIT;
+  `fails` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NULL,
+  PRIMARY KEY (`id`) USING BTREE
+) ENGINE = MyISAM AUTO_INCREMENT = 36 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_unicode_ci ROW_FORMAT = Dynamic;
 
-/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
-/*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
-/*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
+SET FOREIGN_KEY_CHECKS = 1;

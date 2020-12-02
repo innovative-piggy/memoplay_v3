@@ -92,42 +92,38 @@ $result = mysqli_query($connect, $query);
 				<table id="example" class="table table-striped table-bordered" style="width:100%" >  
 					<thead>
 						<tr>  
-							<th>Date</th>  
-							<th>Order Start</th>  
-							<th>Order End</th>  
-							<th>Download</th>  
-							<th>Delete</th>  
-						</tr>  
+							<th>Date</th>
+							<th>Order Start</th>
+							<th>Order End</th>
+							<th>ZIP</th>
+							<th>Fail List</th>
+							<th>Action</th>
+						</tr>
 					</thead>
 					<tbody>
-						<?php while ($row = mysqli_fetch_array($result)): ?>  
+						<?php while ($row = mysqli_fetch_array($result)): ?>
 						<tr>
-							<td><?php echo date('m-d-Y h:i:sa', $row["datep"]); ?></td>  
-							<td><?php echo $row["startp"]; ?></td>  
-							<td><?php echo $row["endp"]; ?></td>  
-							<td><a target="_blank" href="zip/<?php echo $row["datep"]; ?>_<?php echo $row["startp"]; ?>_<?php echo $row["endp"]; ?>.zip">Download</a></td>  
-							<td><a href="deleteZip.php?id=<?php echo $row["id"]; ?>&datep=<?php echo $row["datep"]; ?>&startp=<?php echo $row["startp"]; ?>&endp=<?php echo $row["endp"]; ?>" onclick="return confirm('Are you sure, you want to delete it?')">Delete</a></td>  
+							<td><?php echo date('Y-m-d (H:i:s)', $row["datep"]); ?></td>
+							<td><?php echo $row["startp"]; ?></td>
+							<td><?php echo $row["endp"]; ?></td>
+							<td><a target="_blank" href="zip/<?php echo $row["datep"]; ?>_<?php echo $row["startp"]; ?>_<?php echo $row["endp"]; ?>.zip">Download</a></td>
+							<td>
+								<?php if (!is_null($row['fails']) && $row['fails'] != ""): ?>
+									<a href="#" class="show_fail_list" data="<?php echo htmlspecialchars($row['fails']);?>">Download</a>
+								<?php endif; ?>
+							</td>
+							<td><a href="deleteZip.php?id=<?php echo $row["id"]; ?>&datep=<?php echo $row["datep"]; ?>&startp=<?php echo $row["startp"]; ?>&endp=<?php echo $row["endp"]; ?>" onclick="return confirm('Are you sure, you want to delete it?')">Delete</a></td>
 						</tr>
 						<?php endwhile; ?> 
 					</tbody> 
-
-					<tfoot>
-						<tr>  
-							<th>Date</th>  
-							<th>Order Start</th>  
-							<th>Order End</th>  
-							<th>Download</th>  
-							<th>Delete</th>   
-						</tr>  
-					</tfoot>
 				</table>
-			</div>  
+			</div>
 		</div>  
 	</body>  
 	<script>
 		var progress;
 		var startorder = 1, endorder = 1;
-		var orderids = [], tot = 0, cnt = 0;
+		var orderids = [], tot = 0, cnt = 0, fail_orders = [];
 
 		$(document).ready(function() {  
 			$('#example').DataTable();
@@ -178,6 +174,7 @@ $result = mysqli_query($connect, $query);
 									orderids = rlt.noexist_ids;
 									tot = orderids.length;
 									toastr.success(rlt.noexist_ids.length + ' of ' + rlt.ids.length + ' PNGs generating...');
+									fail_orders = [];
 									createimage();
 								}
 							},
@@ -189,6 +186,7 @@ $result = mysqli_query($connect, $query);
 									orderids = rlt.ids;
 									tot = orderids.length;
 									toastr.success(rlt.ids.length + ' PNGs regenerating entirely...');
+									fail_orders = [];
 									createimage();
 								}
 							},
@@ -210,6 +208,7 @@ $result = mysqli_query($connect, $query);
 		function createimage() {
 			if (cnt >= tot) {
 				toastr.success('Creating Images Over!');
+				console.log(fail_orders);
 				$.confirm({
 					title: 'Continue?',
 					content: 'PNG-Generation Over! You will be automatically create ZIP in 10 seconds.',
@@ -245,8 +244,8 @@ $result = mysqli_query($connect, $query);
 					toastr.error(rlt.msg);
 				}
 			}).catch(function (err) {
-				toastr.error(orderid + ' Generation Failure!');
-
+				toastr.error(orderid + ' Generation Failure cause of ' + err.statusText + '!');
+				fail_orders.push({ order_id_n: orderid, reason: err.statusText });
 				// even if error occurs, continue generation
 				cnt++;
 				progress.percent(cnt * 100 / tot);
@@ -258,7 +257,7 @@ $result = mysqli_query($connect, $query);
 			toastr.warning('Generating ZIP file...');
 			$.post(
 				'create_zip.php',
-				{ oper: 'createzip', startorder: startorder, endorder: endorder }
+				{ oper: 'createzip', startorder: startorder, endorder: endorder, fail_orders: fail_orders }
 			).done(function (rlt) {
 				rlt = JSON.parse(rlt);
 				if (rlt.status == 200) {
@@ -271,7 +270,7 @@ $result = mysqli_query($connect, $query);
 					toastr.error(rlt.msg);
 				}
 			}).catch(function (err) {
-				toastr.error('Network or Server Error!');
+				toastr.error(err.statusText);
 				$('#generatebtn').prop('disabled', false);
 			});
 		}
@@ -285,5 +284,22 @@ $result = mysqli_query($connect, $query);
 				}
 			})
 		});
+
+		$('.show_fail_list').click(function(obj) {
+			var json = JSON.parse(obj.target.getAttribute('data'));
+			var text = "";
+			for (var i = 0; i < json.length; i++) {
+				text += (i + 1) + "\t";
+				text += json[i].order_id_n + "\t\t";
+				text += json[i].reason + "\n";
+			}
+			var element = document.createElement('a');
+			element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(text));
+			element.setAttribute('download', 'fail_list.txt');
+			element.style.display = 'none';
+			document.body.appendChild(element);
+			element.click();
+			document.body.removeChild(element);
+		})
 	</script>
 </html>  

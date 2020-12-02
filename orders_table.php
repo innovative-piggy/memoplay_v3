@@ -33,10 +33,13 @@ if (!is_null($_REQUEST['search']['value'])) {
 }
 $fields = ['o.order_id', 'o.datep', 'o.email', 'o.titre_musique', 'o.phrase_personnalisee', ''];
 $sql .= "ORDER BY " . $fields[$_REQUEST['order'][0]['column']] . " " .  $_REQUEST['order'][0]['dir'] . " ";
-$sql .= "LIMIT $iDisplayStart, $iDisplayLength ";
 
 $result = $conn->query($sql);
 $iFilteredRecords = $result->num_rows;
+
+$sql .= "LIMIT $iDisplayStart, $iDisplayLength ";
+
+$result = $conn->query($sql);
 while ($row = $result->fetch_assoc()) {
 	$action1 = '<a href="javascript:generate(\'' . $row["order_id_n"] . '\')">Generate</a>';
 	$find_file = NULL;
@@ -68,6 +71,6 @@ while ($row = $result->fetch_assoc()) {
 
 $records["draw"] = $sEcho;
 $records["recordsTotal"] = $iTotalRecords;
-$records["recordsFiltered"] = $iTotalRecords;
+$records["recordsFiltered"] = $iFilteredRecords;
 
 echo json_encode($records);

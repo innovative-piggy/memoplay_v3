@@ -28,7 +28,7 @@ while (1) {
             'status' => 'open', 
             'fields' => 'id,order_number,email,line_items,customer,shipping_address,created_at', 
             'limit' => 250, 
-            // 'since_id' => $since_id
+            'since_id' => $since_id
         ]
     );
     
@@ -41,8 +41,6 @@ while (1) {
     $upsell_cnt += $rlt['upsell_cnt'];
 
     $since_id = $rlt['since_id'];
-    
-    break;
 }
 
 if ($rlt === FALSE) {
@@ -68,51 +66,54 @@ function save_to_db($rlt) {
     $connect = new mysqli(SERVERNAME, USERNAME, PASSWORD, DBNAME);
     $connect->set_charset("utf8mb4_unicode_ci");
     
-    $tot = count($rlt);
+    // $tot = count($rlt);
     $success_cnt = 0;
     $fail_cnt = 0;
     $since_id = 0;
     
     foreach ($rlt as $row) {
         $since_id = $row['id'];
-        if (strpos(($SKU = $row['line_items'][0]['sku']), "MEMOPLAYGlass") === false) continue;
-    
-        $shopify_id = $row['id'];
-    
-        $order_id           = $connect->real_escape_string($row['order_number']);
-        $title              = $connect->real_escape_string($row['line_items'][0]['title']);
-        $email              = $connect->real_escape_string($row['email']);
-        $firstname          = $connect->real_escape_string(filter_filename($row['customer']['first_name']));
-        $lastname           = $connect->real_escape_string(filter_filename($row['customer']['last_name']));
-        $shipping_address   = $connect->real_escape_string($row['shipping_address']['address1']);
-        $city               = $connect->real_escape_string($row['shipping_address']['city']);
-        $country            = $connect->real_escape_string($row['shipping_address']['country']);
-        $datep              = $connect->real_escape_string($row['created_at']);
-        $taille             = $connect->real_escape_string($row['line_items'][0]['variant_title']);
-        $order_id_n         = $connect->real_escape_string($order_id . '_' . $row['line_items'][0]['fulfillable_quantity']);
-        $quantity           = $connect->real_escape_string($row['line_items'][0]['quantity']);
-    
-        if (strpos($SKU, "2") !== FALSE && !isset($row['line_items'][0]['properties'])) { // if UPSELL that has not its own data (texts, cover_image, spotify_code)
-            $query = "INSERT INTO orders(order_id_n, order_id, title, email, firstname, lastname, shipping_address, city, country, datep, taille, quantity, SKU, shopify_id) VALUES ('$order_id_n', '$order_id', '$title', '$email', '$firstname', '$lastname', '$shipping_address', '$city', '$country', '$datep', '$taille', '$quantity', '$SKU', '$shopify_id')";
+        $n_line_items = count($row['line_items']);
+        for ($i = 0; $i < $n_line_items; $i++) {
+            $SKU = $row['line_items'][$i]['sku'];
+            if (strpos($SKU, "MEMOPLAYGlass") === false) continue;
+        
+            $shopify_id = $row['id'];
+        
+            $order_id           = $connect->real_escape_string($row['order_number']);
+            $title              = $connect->real_escape_string($row['line_items'][$i]['title']);
+            $email              = $connect->real_escape_string($row['email']);
+            $firstname          = $connect->real_escape_string(filter_filename($row['customer']['first_name']));
+            $lastname           = $connect->real_escape_string(filter_filename($row['customer']['last_name']));
+            $shipping_address   = $connect->real_escape_string($row['shipping_address']['address1']);
+            $city               = $connect->real_escape_string($row['shipping_address']['city']);
+            $country            = $connect->real_escape_string($row['shipping_address']['country']);
+            $datep              = $connect->real_escape_string($row['created_at']);
+            $taille             = $connect->real_escape_string($row['line_items'][$i]['variant_title']);
+            $order_id_n         = $connect->real_escape_string($order_id . '_' . ($i + 1));
+            $quantity           = $connect->real_escape_string($row['line_items'][$i]['quantity']);
+        
+            if (strpos($SKU, "2") !== false && !isset($row['line_items'][$i]['properties'])) { // if UPSELL that has not its own data (texts, cover_image, spotify_code)
+                $query = "INSERT INTO orders(order_id_n, order_id, title, email, firstname, lastname, shipping_address, city, country, datep, taille, quantity, SKU, shopify_id) VALUES ('$order_id_n', '$order_id', '$title', '$email', '$firstname', '$lastname', '$shipping_address', '$city', '$country', '$datep', '$taille', '$quantity', '$SKU', '$shopify_id')";
+                if (mysqli_query($connect, $query) === true) $success_cnt++;
+                else $fail_cnt++;
+                continue;
+            }
+            
+            $titre_musique          = $connect->real_escape_string(remove_unneed_letters($row['line_items'][$i]['properties'][0]['value']));
+
+            $phrase_personnalisee   = $connect->real_escape_string($row['line_items'][$i]['properties'][1]['value']);
+            $phrase_personnalisee   = json_decode(str_replace('\ufe0f', '', json_encode($phrase_personnalisee)));
+
+            $cover_image            = $connect->real_escape_string($row['line_items'][$i]['properties'][2]['value']);
+            $spotify_code           = $connect->real_escape_string($row['line_items'][$i]['properties'][3]['value']);
+            
+            $query = "INSERT INTO orders(order_id_n, order_id, title, email, firstname, lastname, shipping_address, city, country, titre_musique, phrase_personnalisee, cover_image, spotify_code, datep, taille, quantity, SKU, shopify_id) VALUES ('$order_id_n', '$order_id', '$title', '$email', '$firstname', '$lastname', '$shipping_address', '$city', '$country', '$titre_musique', '$phrase_personnalisee', '$cover_image', '$spotify_code', '$datep', '$taille', '$quantity', '$SKU', '$shopify_id')";
             if (mysqli_query($connect, $query) === true) $success_cnt++;
             else $fail_cnt++;
-            continue;
         }
-        
-        $titre_musique          = $connect->real_escape_string(remove_unneed_letters($row['line_items'][0]['properties'][0]['value']));
-
-        $phrase_personnalisee   = $connect->real_escape_string($row['line_items'][0]['properties'][1]['value']);
-        // $$$ remove strange character code as if it looks like emoji letter
-        $phrase_personnalisee   = json_decode(str_replace('\ufe0f', '', json_encode($phrase_personnalisee)));
-        // $$$
-
-        $cover_image            = $connect->real_escape_string($row['line_items'][0]['properties'][2]['value']);
-        $spotify_code           = $connect->real_escape_string($row['line_items'][0]['properties'][3]['value']);
-        
-        $query = "INSERT INTO orders(order_id_n, order_id, title, email, firstname, lastname, shipping_address, city, country, titre_musique, phrase_personnalisee, cover_image, spotify_code, datep, taille, quantity, SKU, shopify_id) VALUES ('$order_id_n', '$order_id', '$title', '$email', '$firstname', '$lastname', '$shipping_address', '$city', '$country', '$titre_musique', '$phrase_personnalisee', '$cover_image', '$spotify_code', '$datep', '$taille', '$quantity', '$SKU', '$shopify_id')";
-        if (mysqli_query($connect, $query) === true) $success_cnt++;
-        else $fail_cnt++;
     }
+    $tot = $success_cnt + $fail_cnt;
 
     $connect->close();
 

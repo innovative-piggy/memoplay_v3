@@ -7,11 +7,7 @@ if (isset($_POST['oper'])) {
     } else if ($_POST['oper'] == 'createimage') {
         echo create_image($_POST['orderid']);
     } else if ($_POST['oper'] == 'createzip') {
-        if (stripos(PHP_OS, 'win') !== FALSE) createzip_both($_POST['startorder'], $_POST['endorder']);
-        else {
-            createzip_both($_POST['startorder'], $_POST['endorder']);
-            // createzip_linux($_POST['startorder'], $_POST['endorder']);
-        }
+        createzip($_POST['startorder'], $_POST['endorder'], $_POST['fail_orders']);
     } else if ($_POST['oper'] == 'update_music_personal') {
         $order_id_n = $_POST['order_id_n'];
         $text_music = $_POST['text_music'];
@@ -50,7 +46,7 @@ function gettot($start_id = 1, $end_id = 1) {
 }
 
 // Generate the ZIP file from created image files(for BOTH Windows AND Linux)
-function createzip_both($start_id = 1, $end_id = 1) {
+function createzip($start_id = 1, $end_id = 1, $fail_orders = []) {
     $t = time();
     $zip = new ZipArchive();
     $filename = $t . "_" . $start_id . "_" . $end_id . ".zip";
@@ -83,7 +79,7 @@ function createzip_both($start_id = 1, $end_id = 1) {
                 }
             }
             closedir($dh);
-            if (savetodb($start_id, $end_id) === TRUE) {
+            if (savetodb($start_id, $end_id, $fail_orders) === TRUE) {
                 echo json_encode(['status' => 200, 'msg' => "{$filename} generated successfully!"]);
             } else {
                 echo json_encode(['status' => 400, 'msg' => "DB Error!"]);
@@ -92,68 +88,16 @@ function createzip_both($start_id = 1, $end_id = 1) {
     }
 }
 
-function rmove($src, $dst) {
-    $dirs = ["L", "M", "S"];
-    foreach ($dirs as $dir) {
-        $subdir = "$src/$dir";
-        $files = scandir($subdir);
-        foreach ($files as $file) {
-            if (!is_file("$subdir/$file")) continue;
-            rename(realpath("$subdir") . "/" . $file, realpath("$dst") . "/" . $file);
-        }
-    }
-}
-
-// Generate the ZIP file from created image files(for Only Linux)
-function createzip_linux($start_id = 1, $end_id = 1) {
-    $t = time();
-    $zipname = $t . "_" . $start_id . "_" . $end_id . ".zip";
-    $zippathname = "./zip/$zipname";
-    $temppath = "./zip/temp";
-    
-    // rmove($temppath, DIR); echo 'finish'; exit;
-    
-    if (is_dir(DIR)) {
-        if ($dh = opendir(DIR)) {
-            while (($file = readdir($dh)) !== false) {
-                if (is_file(DIR . $file)) {
-                    if ($file != '' && $file != '.' && $file != '..') {
-                        $arrexp = explode(" ", $file);
-                        $file_withoutex = $arrexp[0];
-                        if ($file_withoutex >= $start_id && $file_withoutex <= $end_id + 1) {
-                            if (strpos($file, "_S_") !== false || strpos($file, "_S(") !== false) {
-                                rename(DIR . $file, "$temppath/S/$file");
-                            } else if (strpos($file, "_M_") !== false || strpos($file, "_M(") !== false) {
-                                rename(DIR . $file, "$temppath/M/$file");
-                            } else if (strpos($file, "_L_") !== false || strpos($file, "_L(") !== false) {
-                                rename(DIR . $file, "$temppath/L/$file");
-                            }
-                        }
-                    }
-                }
-            }
-
-            exec("zip -1 -r $zippathname $temppath");
-            
-            rmove($temppath, DIR);
-
-            if (savetodb($start_id, $end_id) === TRUE) {
-                echo json_encode(['status' => 200, 'msg' => "{$zipname} generated successfully!"]);
-            } else {
-                echo json_encode(['status' => 400, 'msg' => "DB Error!"]);
-            }
-        }
-    }
-}
-
 // Record the ZIP result into the DB
-function savetodb($start_id = 1, $end_id = 1) {
+function savetodb($start_id = 1, $end_id = 1, $fail_orders = []) {
     $time = time();
     $conn = new mysqli(SERVERNAME, USERNAME, PASSWORD, DBNAME);
-    if ($conn->connect_error) {
-        return false;
-    }
-    $sql = "INSERT INTO zip(datep, startp, endp) VALUES ('{$time}', '{$start_id}', '{$end_id}')";
+    if ($conn->connect_error) return false;
+
+    $fails = NULL;
+    if (count($fail_orders) > 0) $fails = json_encode($fail_orders);
+
+    $sql = "INSERT INTO zip(datep, startp, endp, fails) VALUES ('{$time}', '{$start_id}', '{$end_id}', '{$fails}')";
     if ($conn->query($sql) === true) {
         $conn->close();
         return true;
