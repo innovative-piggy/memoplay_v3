@@ -30,10 +30,6 @@ if (isset($_POST['login']) && !empty($_POST['password'])) {
     <meta charset="utf-8">
     <title>Sign in</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-
-
-
     <link rel="stylesheet" href="https://getbootstrap.com/2.3.2/assets/css/bootstrap.css" /> 
     <style type="text/css">
       body {

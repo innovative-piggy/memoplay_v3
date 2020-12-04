@@ -229,6 +229,15 @@ $result = mysqli_query($connect, $query);
 				return;
 			}
 			var orderid = orderids[cnt][0];
+
+			//$$$ var pn = orderid.split('_');
+			// if (parseInt(pn[1]) < 2) {
+			// 	cnt++;
+			// 	progress.percent(cnt * 100 / tot);
+			// 	createimage(); 
+			// 	return;
+			// }
+
 			$.post(
 				'create_zip.php',
 				{ oper: 'createimage', orderid: orderid }

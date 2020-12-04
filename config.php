@@ -60,7 +60,7 @@ function is_emoji($value) {
 }
 
 // CORE function: Create the Image with order_id_n
-function create_image($order_id_n = '') {
+function create_image($order_id_n = '', $kind = 'S') {
     $conn = new mysqli(SERVERNAME, USERNAME, PASSWORD, DBNAME);
     if ($conn->connect_error) {
         return json_encode(['status' => 400, 'msg' => "DB Connection Error!"]);
@@ -87,17 +87,17 @@ function create_image($order_id_n = '') {
     $ndate = date('dmY', strtotime($datep));
     $image_name = $order_id_n . '_' . $quantity . '_' . $taille . '_' . $username . '_' . $ndate;
     
-    $fontsize1 = 80;
-    $fontsize2 = 67;
-    $fontsize3 = 39;
+    $fontsize1 = 80 / 2;
+    $fontsize2 = 67 / 2;
+    $fontsize3 = 39 / 2;
     $color = 'black';
     
-    $image = new Imagick(realpath('./images/template2000.png'));
+    $image = new Imagick(realpath('./images/template1000.png'));
     
     $overlay_cover = new Imagick();
     $overlay_cover->readImageBlob(file_get_contents($cover_image));
-    $overlay_cover->resizeImage(1796, 1796, Imagick::FILTER_LANCZOS, 1);
-    $image->compositeImage($overlay_cover, Imagick::COMPOSITE_DEFAULT, 102, 47);
+    $overlay_cover->resizeImage(1796 / 2, 1796 / 2, Imagick::FILTER_LANCZOS, 1);
+    $image->compositeImage($overlay_cover, Imagick::COMPOSITE_DEFAULT, 102 / 2, 47 / 2);
     
     $overlay_spot = new Imagick();
     $overlay_spot->readImageBlob(file_get_contents($spotify_code));
@@ -105,8 +105,8 @@ function create_image($order_id_n = '') {
     $overlay_spot->floodFillPaintImage('#FF000000', 10, '#FFFFFF', 240, 194, false);
     $overlay_spot->floodFillPaintImage('#FF000000', 10, '#FFFFFF', 240, 242, false);
     $overlay_spot->floodFillPaintImage('#FF000000', 10, '#FFFFFF', 240, 290, false);
-    $overlay_spot->resizeImage(1436, 359, Imagick::FILTER_LANCZOS, 1);
-    $image->compositeImage($overlay_spot, Imagick::COMPOSITE_DEFAULT, 282, 1870);
+    $overlay_spot->resizeImage(1436 / 2, 359 / 2, Imagick::FILTER_LANCZOS, 1);
+    $image->compositeImage($overlay_spot, Imagick::COMPOSITE_DEFAULT, 282 / 2, 1870 / 2);
     
     $draw = new ImagickDraw();
     $draw->setTextEncoding('UTF-8');
@@ -120,7 +120,7 @@ function create_image($order_id_n = '') {
     $arr = [];
     preg_match_all(EMOJIREG, $text_personal, $arr);
     
-    $txt_pos = 96;
+    $txt_pos = 96 / 2;
     foreach ($arr[0] as $value) {
         if (is_emoji($value) != false) {
             $draw->setFont(realpath("./images/fonts/seguiemj.ttf"));
@@ -128,19 +128,22 @@ function create_image($order_id_n = '') {
             $draw->setFont(realpath("./images/fonts/arialunicodems.ttf"));
         }
         $met = $image->queryFontMetrics($draw, $value);
-        $draw->annotation($txt_pos, 2312, $value);
+        $draw->annotation($txt_pos, 2312 / 2, $value);
         $txt_pos += $met['textWidth'];
     }
     
     $draw->setFontSize($fontsize2);
     $draw->setFont(realpath("./images/fonts/arialunicodems.ttf"));
-    $draw->annotation(98, 2408, $text_music);
+    $draw->annotation(98 / 2, 2408 / 2, $text_music);
     
     $draw->setFontSize($fontsize3);
     $draw->setFont(realpath("./images/fonts/LatoRegular.ttf"));
     $draw->setFillColor('rgb(202,202,202)');
-    $draw->annotation(1900, 3190, $order_id);
+    $draw->annotation(1900 / 2, 3190 / 2, $order_id);
     $image->drawImage($draw);
+
+    if ($kind === 'L') $image->resizeImage(2000, 3200, Imagick::FILTER_LANCZOS, 1);
+    else if ($kind === 'M') $image->resizeImage(1500, 2400, Imagick::FILTER_LANCZOS, 1);
 
     $image->setImageFormat('png8');
     $image->setImageDepth(8);
@@ -150,9 +153,9 @@ function create_image($order_id_n = '') {
         $image->quantizeImage($colors, Imagick::COLORSPACE_SRGB, 0, false, false);
     }
     
-    $filename = realpath("./images/generated/") . "/" . "$image_name.png";
+    $filename = realpath("./images/generated/") . "/" . "${image_name}.png";
     if ($image->writeImage($filename) !== FALSE) {
-        return json_encode(['status' => 200, 'orderid' => $order_id_n, 'filename' => "$image_name.png"]);
+        return json_encode(['status' => 200, 'orderid' => $order_id_n, 'filename' => "${image_name}.png"]);
     } else {
         return json_encode(['status' => 400, 'msg' => 'File-write Error!']);
     }
