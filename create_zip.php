@@ -60,9 +60,9 @@ function createzip($start_id = 1, $end_id = 1, $fail_orders = []) {
             while (($file = readdir($dh)) !== false) {
                 if (is_file(DIR . $file)) {
                     if ($file != '' && $file != '.' && $file != '..') {
-                        $arrexp = explode(" ", $file);
-                        $file_withoutex = $arrexp[0];
-                        if ($file_withoutex >= $start_id && $file_withoutex <= $end_id + 1) {
+                        $arrexp = explode("_", $file);
+                        $file_order_id = $arrexp[0];
+                        if ($file_order_id >= $start_id && $file_order_id <= $end_id + 1) {
                             $fld = "";
                             if (strpos($file, "_S_") !== false || strpos($file, "_S(") !== false) {
                                 $fld = "S/";
