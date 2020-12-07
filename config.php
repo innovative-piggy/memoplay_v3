@@ -139,7 +139,7 @@ function create_image($order_id_n = '', $kind = 'S') {
     $draw->setFontSize($fontsize3);
     $draw->setFont(realpath("./images/fonts/LatoRegular.ttf"));
     $draw->setFillColor('rgb(202,202,202)');
-    $draw->annotation(1900 / 2, 3190 / 2, $order_id);
+    $draw->annotation(1850 / 2, 3190 / 2, 'E' . $order_id);
     $image->drawImage($draw);
 
     if ($kind === 'L') $image->resizeImage(2000, 3200, Imagick::FILTER_LANCZOS, 1);
