@@ -273,7 +273,7 @@ $result = mysqli_query($connect, $query);
 					toastr.success(rlt.msg);
 					setTimeout(function() {
 						$('#generatebtn').prop('disabled', false);
-						// location.reload();
+						location.reload();
 					}, 1000 * 2);
 				} else {
 					toastr.error(rlt.msg);
